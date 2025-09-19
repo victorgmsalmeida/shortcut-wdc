@@ -1,74 +1,24 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Shortcut API Connector</title>
-    <script src="https://connectors.tableau.com/libs/tableauwdc-2.3.latest.js"></script>
-</head>
-<body>
-    <h2>Conector para API da Shortcut</h2>
-    <p>Conectando ao endpoint: <strong>/stories</strong></p>
-    <button id="connectButton">Conectar</button>
+var myConnector = tableau.makeConnector();
 
-    <script>
-        (function () {
-            var myConnector = tableau.makeConnector();
+myConnector.getData = function (table, doneCallback) {
+  fetch('https://api.app.shortcut.com/api/v3/objectives', {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Beaf8658d-ed8e-4da2-ad2e-b412076a283f'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    // Transformar os dados para o formato do Tableau
+    var tableData = [];
+    data.forEach(item => {
+      tableData.push({
+        campo1: item.campo1,
+        campo2: item.campo2
+      });
+    });
 
-            myConnector.getSchema = function (schemaCallback) {
-                var cols = [
-                    { id: "id", alias: "ID", dataType: tableau.dataTypeEnum.int },
-                    { id: "name", alias: "Nome da Story", dataType: tableau.dataTypeEnum.string },
-                    { id: "created_at", alias: "Data de criação", dataType: tableau.dataTypeEnum.datetime },
-                    { id: "updated_at", alias: "Data de atualização", dataType: tableau.dataTypeEnum.datetime },
-                    { id: "workflow_state_id", alias: "Estado", dataType: tableau.dataTypeEnum.int }
-                ];
-
-                var tableSchema = {
-                    id: "shortcutStories",
-                    alias: "Histórias do Shortcut",
-                    columns: cols
-                };
-
-                schemaCallback([tableSchema]);
-            };
-
-            myConnector.getData = function (table, doneCallback) {
-                fetch("https://api.app.shortcut.com/api/v3/stories", {
-                    method: "GET",
-                    headers: {
-                        "Shortcut-Token": "eaf8658d-ed8e-4da2-ad2e-b412076a283f",
-                        "Content-Type": "application/json"
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    var tableData = [];
-
-                    data.forEach(function (story) {
-                        tableData.push({
-                            id: story.id,
-                            name: story.name,
-                            created_at: story.created_at,
-                            updated_at: story.updated_at,
-                            workflow_state_id: story.workflow_state_id
-                        });
-                    });
-
-                    table.appendRows(tableData);
-                    doneCallback();
-                })
-                .catch(error => {
-                    console.error("Erro ao buscar dados:", error);
-                });
-            };
-
-            tableau.registerConnector(myConnector);
-
-            document.getElementById("connectButton").addEventListener("click", function () {
-                tableau.connectionName = "Shortcut Stories API";
-                tableau.submit();
-            });
-        })();
-    </script>
-</body>
-</html>
-
+    table.appendRows(tableData);
+    doneCallback();
+  });
+};
